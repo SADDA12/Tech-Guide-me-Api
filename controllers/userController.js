@@ -4,8 +4,34 @@ const jwt = require("jsonwebtoken");
 // Register a new user
 exports.registerUser = async (req, res) => {
   try {
-    const { username, email, password, role } = req.body;
-    const user = new User({ username, email, password, role });
+    const {
+      username,
+      name,
+      email,
+      password,
+      role,
+      availability_start,
+      availability_end,
+      position,
+      company,
+      skills,
+      description,
+      rateHour,
+    } = req.body;
+    const user = new User({
+      username,
+      name,
+      email,
+      password,
+      role,
+      availability_start,
+      availability_end,
+      position,
+      company,
+      skills,
+      description,
+      rateHour,
+    });
     await user.save();
     res.status(201).send("User registered successfully");
   } catch (error) {
@@ -23,7 +49,23 @@ exports.loginUser = async (req, res) => {
     const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
       expiresIn: "1h",
     });
-    res.json({ message: "Login successful", token });
+
+    const responseData = {
+      message: "Login successful",
+      name: user.username,
+      email: user.email,
+      token: token,
+      role: user.role,
+    };
+
+    if (user.role === "mentor") {
+      responseData.position = user.position;
+      responseData.company = user.company;
+      responseData.skills = user.skills;
+      responseData.description = user.description;
+      responseData.rateHour = user.rateHour;
+    }
+    res.json(responseData);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
