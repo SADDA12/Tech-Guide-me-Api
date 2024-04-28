@@ -6,38 +6,63 @@ exports.registerUser = async (req, res) => {
   try {
     const {
       username,
-      name,
       email,
+      name,
       password,
       role,
-      availability_start,
-      availability_end,
       position,
       company,
       skills,
       description,
       rateHour,
+      availability_start,
+      availability_end,
     } = req.body;
+
+    // Create a new user instance
     const user = new User({
       username,
-      name,
       email,
+      name,
       password,
       role,
-      availability_start,
-      availability_end,
       position,
       company,
       skills,
       description,
       rateHour,
+      availability: [
+        { startTime: availability_start, endTime: availability_end },
+      ],
     });
+
     await user.save();
-    res.status(201).send("User registered successfully");
+    //gen token
+    const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
+      expiresIn: "1h",
+    });
+
+    // Prepare user data to return
+    const userData = {
+      message: "Login successful",
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      token: token,
+      role: user.role,
+    };
+
+    // Send the user data in response
+    res.status(201).json({
+      userData,
+      // message: "User registered successfully",
+      // user: userData,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 // Login user
 exports.loginUser = async (req, res) => {
   try {
@@ -52,7 +77,8 @@ exports.loginUser = async (req, res) => {
 
     const responseData = {
       message: "Login successful",
-      name: user.username,
+      username: user.username,
+      name: user.name,
       email: user.email,
       token: token,
       role: user.role,
